@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Previewer</title>
+  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --primary: #4a2c8d;
+      --secondary: #8c52ff;
+      --dark: #1c0b42;
+      --light: #f0e6ff;
+      --editor-bg: #2d2d39;
+      --preview-bg: #f8f9fa;
+      --border: #e0e0e0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--dark), var(--primary));
+      color: #333;
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 0;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+      color: white;
+      text-shadow: 0 0 10px rgba(140, 82, 255, 0.5);
+    }
+
+    .subtitle {
+      color: var(--light);
+      font-size: 1.2rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .app-container {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+
+    .panel {
+      flex: 1;
+      min-width: 300px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 500px;
+    }
+
+    .panel-header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+    }
+
+    #editor {
+      width: 100%;
+      height: 100%;
+      padding: 20px;
+      border: none;
+      resize: none;
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      background: var(--editor-bg);
+      color: #f0f0f0;
+      outline: none;
+      flex: 1;
+    }
+
+    #preview {
+      padding: 25px;
+      overflow-y: auto;
+      flex: 1;
+      background: var(--preview-bg);
+    }
+
+    /* Markdown styling */
+    #preview h1 {
+      font-size: 2.2rem;
+      margin: 1rem 0;
+      color: var(--primary);
+      text-shadow: none;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    #preview h2 {
+      font-size: 1.8rem;
+      margin: 0.9rem 0;
+      color: var(--secondary);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.4rem;
+    }
+
+    #preview h3 {
+      font-size: 1.5rem;
+      margin: 0.8rem 0;
+      color: var(--dark);
+    }
+
+    #preview p {
+      margin: 1rem 0;
+    }
+
+    #preview a {
+      color: var(--secondary);
+      text-decoration: none;
+    }
+
+    #preview a:hover {
+      text-decoration: underline;
+    }
+
+    #preview code {
+      background: var(--editor-bg);
+      color: #f0f0f0;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+    }
+
+    #preview pre {
+      background: var(--editor-bg);
+      padding: 1rem;
+      border-radius: 5px;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    #preview pre code {
+      background: none;
+      padding: 0;
+    }
+
+    #preview blockquote {
+      border-left: 4px solid var(--secondary);
+      padding: 0.5rem 1rem;
+      margin: 1rem 0;
+      background: rgba(140, 82, 255, 0.05);
+      color: #555;
+    }
+
+    #preview table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1rem 0;
+    }
+
+    #preview th, #preview td {
+      border: 1px solid var(--border);
+      padding: 8px;
+      text-align: left;
+    }
+
+    #preview th {
+      background: var(--light);
+    }
+
+    #preview img {
+      max-width: 100%;
+      border-radius: 5px;
+      margin: 1rem 0;
+    }
+
+    #preview ul, #preview ol {
+      margin: 1rem 0;
+      padding-left: 2rem;
+    }
+
+    #preview li {
+      margin: 0.5rem 0;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+      padding: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .app-container {
+        flex-direction: column;
+      }
+      
+      .panel {
+        min-height: 400px;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+    
+    const MarkdownPreviewer = () => {
+      // Default markdown content with all required elements
+      const defaultMarkdown = `# Welcome to Markdown Previewer!
+## This is a sub-heading...
+### Here are some other cool features:
+
+Heres some code, \`<div></div>\`, between 2 backticks.
+
+\`\`\`javascript
+// This is a code block:
+function helloWorld() {
+  console.log("Hello World!");
+}
+\`\`\`
+
+You can make text **bold**... whoa!
+Or _italic_.
+Or... wait for it... **_both!_**
+And feel free to ~~cross stuff out~~.
+
+There's also [links](https://www.freecodecamp.org), and
+> Block Quotes!
+
+And if you want to get really crazy, even tables:
+
+Wild Header | Crazy Header | Another Header?
+------------ | ------------- | -------------
+Your content can | be here, and it | can be here....
+And here. | Okay. | I think we get it.
+
+- And of course there are lists.
+  - Some are bulleted.
+     - With different indentation levels.
+        - That look like this.
+
+1. And there are numbered lists too.
+1. Use just 1s if you want!
+1. And last but not least, let's not forget embedded images:
+
+![freeCodeCamp Logo](https://design-style-guide.freecodecamp.org/downloads/fcc_secondary_small.svg)
+`;
+
+      const [markdown, setMarkdown] = useState(defaultMarkdown);
+      
+      // Function to handle changes in the editor
+      const handleEditorChange = (e) => {
+        setMarkdown(e.target.value);
+      };
+      
+      // Convert markdown to HTML using marked
+      const getMarkdownText = () => {
+        return { __html: marked.parse(markdown) };
+      };
+      
+      return (
+        <div className="container">
+          <header>
+            <h1>Markdown Previewer</h1>
+            <p className="subtitle">Type markdown on the left and see it rendered in real-time on the right</p>
+          </header>
+          
+          <div className="app-container">
+            <div className="panel">
+              <div className="panel-header">
+                <div className="panel-title">
+                  <i className="fas fa-edit"></i>
+                  <span>Editor</span>
+                </div>
+                <button className="icon-btn" title="Maximize">
+                  <i className="fas fa-expand"></i>
+                </button>
+              </div>
+              <textarea 
+                id="editor"
+                value={markdown}
+                onChange={handleEditorChange}
+                placeholder="Enter your markdown here..."
+              ></textarea>
+            </div>
+            
+            <div className="panel">
+              <div className="panel-header">
+                <div className="panel-title">
+                  <i className="fas fa-eye"></i>
+                  <span>Preview</span>
+                </div>
+                <button className="icon-btn" title="Maximize">
+                  <i className="fas fa-expand"></i>
+                </button>
+              </div>
+              <div 
+                id="preview" 
+                dangerouslySetInnerHTML={getMarkdownText()} 
+              ></div>
+            </div>
+          </div>
+          
+          <div className="footer">
+            <p>Markdown Previewer | Created for freeCodeCamp Project</p>
+          </div>
+        </div>
+      );
+    };
+    
+    ReactDOM.render(<MarkdownPreviewer />, document.getElementById('app'));
+  </script>
+  
+  <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+</body>
+</html>
